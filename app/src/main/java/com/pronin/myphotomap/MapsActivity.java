@@ -8,8 +8,8 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.pronin.myphotomap.model.DataGetter;
-import com.pronin.myphotomap.model.Pictures;
+import com.pronin.myphotomap.model.PhotoArrayFormation;
+import com.pronin.myphotomap.model.Picture;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.List;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-    private DataGetter dataGetter;
+    private PhotoArrayFormation photoArrayFormation;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,7 +27,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        dataGetter = new DataGetter();
+        photoArrayFormation = new PhotoArrayFormation();
 
 
     }
@@ -44,10 +44,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        ArrayList<Pictures> list = new ArrayList<>();
-        dataGetter.getCameraImages(this, new DataGetter.OnGettingDataDoneListener() {
+        ArrayList<Picture> list = new ArrayList<>();
+        photoArrayFormation.getCameraImages(this, new PhotoArrayFormation.OnGettingDataDoneListener() {
             @Override
-            public void onGettingDataDone(List<Pictures> pictures) {
+            public void onGettingDataDone(List<Picture> pictures) {
                 runOnUiThread(() -> {
                     list.addAll(pictures);
                 });

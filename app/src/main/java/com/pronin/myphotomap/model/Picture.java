@@ -1,12 +1,12 @@
 package com.pronin.myphotomap.model;
 
-public class Pictures {
+public class Picture {
     private final String path;
     private final float latitude;
     private final float longitude;
     private final String date;
 
-    public Pictures(String pathArg, float latArg, float longArg, String dateArg) {
+    public Picture(String pathArg, float latArg, float longArg, String dateArg) {
         path = pathArg;
         latitude = latArg;
         longitude = longArg;
@@ -31,7 +31,7 @@ public class Pictures {
 
     @Override
     public String toString() {
-        return "Pictures{" +
+        return "Picture{" +
                 "path='" + path + '\'' +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
