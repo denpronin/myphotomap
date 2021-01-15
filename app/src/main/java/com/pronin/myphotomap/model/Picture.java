@@ -2,14 +2,12 @@ package com.pronin.myphotomap.model;
 
 public class Picture {
     private final String path;
-    private final float latitude;
-    private final float longitude;
+    private final LatLong latLong;
     private final String date;
 
     public Picture(String pathArg, float latArg, float longArg, String dateArg) {
         path = pathArg;
-        latitude = latArg;
-        longitude = longArg;
+        latLong = new LatLong(latArg, longArg, false);
         date = dateArg;
     }
 
@@ -17,12 +15,8 @@ public class Picture {
         return date;
     }
 
-    public float getLatitude() {
-        return latitude;
-    }
-
-    public float getLongitude() {
-        return longitude;
+    public LatLong getLatLong() {
+        return latLong;
     }
 
     public String getPath() {
@@ -33,8 +27,8 @@ public class Picture {
     public String toString() {
         return "Picture{" +
                 "path='" + path + '\'' +
-                ", latitude=" + latitude +
-                ", longitude=" + longitude +
+                ", latitude=" + latLong.getLatitude() +
+                ", longitude=" + latLong.getLongitude() +
                 ", date='" + date + '\'' +
                 '}';
     }

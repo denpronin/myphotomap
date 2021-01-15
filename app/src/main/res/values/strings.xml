@@ -6,4 +6,6 @@
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
     <string name="title_activity_maps">MyPhotoMap</string>
+    <string name="no_permissions_msg">Application requires all requested permissions</string>
+    <string name="no_location">Failed to get location</string>
 </resources>

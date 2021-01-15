@@ -4,22 +4,17 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class LatLong {
-    private float latitude;
-    private float longitude;
+    private final float latitude;
+    private final float longitude;
 
-    public LatLong() {}
-
-    public LatLong(float latArg, float longArg) {
-        latitude = new BigDecimal(latArg).setScale(2, RoundingMode.HALF_UP).floatValue();
-        longitude = new BigDecimal(longArg).setScale(2, RoundingMode.HALF_UP).floatValue();
-    }
-
-    public void setLatitude(float latitude) {
-        this.latitude = latitude;
-    }
-
-    public void setLongitude(float longitude) {
-        this.longitude = longitude;
+    public LatLong(float latArg, float longArg, boolean isRounded) {
+        if (isRounded) {
+            latitude = latArg;
+            longitude = longArg;
+        } else {
+            latitude = new BigDecimal(latArg).setScale(2, RoundingMode.HALF_UP).floatValue();
+            longitude = new BigDecimal(longArg).setScale(2, RoundingMode.HALF_UP).floatValue();
+        }
     }
 
     public float getLongitude() {
@@ -41,8 +36,16 @@ public class LatLong {
     @Override
     public int hashCode() {
         int result = 13;
-        result = 37 * result + Float.floatToIntBits(latitude);
-        result = 37 * result + Float.floatToIntBits(longitude);
+        result = 31 * result + Float.floatToIntBits(latitude);
+        result = 31 * result + Float.floatToIntBits(longitude);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LatLong{" +
+                "latitude=" + latitude +
+                ", longitude=" + longitude +
+                '}';
     }
 }
