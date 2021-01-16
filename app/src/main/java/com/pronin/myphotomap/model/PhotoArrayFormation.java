@@ -51,9 +51,6 @@ public class PhotoArrayFormation {
                 cursor.close();
                 Log.d(TAG, Integer.toString(imgList.size()));
                 HashMap<LatLong, ArrayList<Picture>> markersMap = new HashMap<>(createMarkersMap(imgList));
-            if (!markersMap.isEmpty()) {
-                Log.d("!!!!!!!!!!!!!!!!!", "Map of markers size " + markersMap.size());
-            }
                 callback.onMarkersMapCreated(markersMap);
         });
         getting.start();

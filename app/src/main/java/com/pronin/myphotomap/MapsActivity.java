@@ -8,6 +8,8 @@ import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -19,13 +21,21 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.pronin.myphotomap.model.LatLong;
 import com.pronin.myphotomap.model.PhotoArrayFormation;
 import com.pronin.myphotomap.model.Picture;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
     private final String TAG = "MapsActivity";
@@ -36,6 +46,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final String PERMISSION_EXTERNAL_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE;
     private static final String PERMISSION_MEDIA_LOCATION = Manifest.permission.ACCESS_MEDIA_LOCATION;
     private static final int PERMISSION_REQUEST_CODE = 856;
+    private static final int DEFAULT_THREAD_POOL_SIZE = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,20 +72,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         focusCamera();
     }
 
+    private Bitmap getBitmap(String path) {
+        Bitmap bitmap = null;
+        try {
+            File f = new File(path);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 50;
+            options.outMimeType = "image/png";
+            bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        return bitmap;
+    }
+
     private void setMarkersMap() {
         photoArrayFormation.getCameraImages(this, new PhotoArrayFormation.OnMarkersMapCreatedListener() {
             @Override
             public void onMarkersMapCreated(HashMap<LatLong, ArrayList<Picture>> pictures) {
                 runOnUiThread(() -> {
                     markersMap.putAll(pictures);
+                    ExecutorService executorService = Executors.newFixedThreadPool(DEFAULT_THREAD_POOL_SIZE);
                     for (LatLong latLong : markersMap.keySet()) {
-                        mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false));
-                        Log.d(TAG, "Added marker " + latLong.toString());
+                        final String path = markersMap.get(latLong).get(0).getPath();
+                        Bitmap img = null;
+                        Future<Bitmap> future = executorService.submit(() -> getBitmap(path));
+                        try {
+                            img = future.get();
+                        } catch (ExecutionException | InterruptedException ex) {
+                            ex.printStackTrace();
+                        }
+                        if (img != null) {
+                            mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false).icon(BitmapDescriptorFactory.fromBitmap(img)));
+                            Log.d(TAG, "Added marker with icon " + latLong.toString());
+                        } else {
+                            mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false));
+                            Log.d(TAG, "Added marker without icon " + latLong.toString());
+                        }
                     }
                 });
             }
         });
     }
+
 
     private void focusCamera() {
         if (ContextCompat.checkSelfPermission(this, PERMISSION_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
