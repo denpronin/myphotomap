@@ -10,6 +10,13 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
@@ -54,13 +61,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_maps);
         photoArrayFormation = new PhotoArrayFormation();
         markersMap = new HashMap<>();
-        if (ContextCompat.checkSelfPermission(this, PERMISSION_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, PERMISSION_MEDIA_LOCATION) == PackageManager.PERMISSION_GRANTED &&
-                ContextCompat.checkSelfPermission(this, PERMISSION_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            setMarkersMap();
-        } else ActivityCompat.requestPermissions(this,
-                new String[]{ PERMISSION_EXTERNAL_STORAGE, PERMISSION_MEDIA_LOCATION, PERMISSION_FINE_LOCATION },
-                PERMISSION_REQUEST_CODE);
+
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -69,6 +70,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        if (ContextCompat.checkSelfPermission(this, PERMISSION_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, PERMISSION_MEDIA_LOCATION) == PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, PERMISSION_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            setMarkersMap();
+        } else ActivityCompat.requestPermissions(this,
+                new String[]{ PERMISSION_EXTERNAL_STORAGE, PERMISSION_MEDIA_LOCATION, PERMISSION_FINE_LOCATION },
+                PERMISSION_REQUEST_CODE);
         focusCamera();
     }
 
@@ -77,13 +85,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         try {
             File f = new File(path);
             BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 50;
+            options.inSampleSize = 30;
             options.outMimeType = "image/png";
             bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+            bitmap = getRoundedBitmap(bitmap);
         } catch (IOException ex) {
             ex.printStackTrace();
         }
         return bitmap;
+    }
+
+    public static Bitmap getRoundedBitmap(Bitmap bitmap)
+    {
+        final Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),  bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(output);
+
+        final int color = Color.RED;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, Math.min(bitmap.getHeight(), bitmap.getWidth()), Math.min(bitmap.getHeight(), bitmap.getWidth()));
+        final RectF rectF = new RectF(rect);
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawOval(rectF, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+
+        bitmap.recycle();
+
+        return output;
     }
 
     private void setMarkersMap() {
@@ -93,14 +124,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 runOnUiThread(() -> {
                     markersMap.putAll(pictures);
                     ExecutorService executorService = Executors.newFixedThreadPool(DEFAULT_THREAD_POOL_SIZE);
+                    Bitmap img;
                     for (LatLong latLong : markersMap.keySet()) {
                         final String path = markersMap.get(latLong).get(0).getPath();
-                        Bitmap img = null;
+                        img = null;
                         Future<Bitmap> future = executorService.submit(() -> getBitmap(path));
                         try {
                             img = future.get();
                         } catch (ExecutionException | InterruptedException ex) {
                             ex.printStackTrace();
+                            Log.w(TAG, "Failed to convert image to bitmap");
                         }
                         if (img != null) {
                             mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false).icon(BitmapDescriptorFactory.fromBitmap(img)));
