@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">MyPhotoMap</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Home</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_slideshow">Slideshow</string>
+    <string name="title_activity_maps">MyPhotoMap</string>
+    <string name="no_permissions_msg">Application requires all requested permissions</string>
+    <string name="no_location">Failed to get location</string>
 </resources>
