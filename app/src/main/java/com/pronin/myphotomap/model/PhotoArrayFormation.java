@@ -2,13 +2,23 @@ package com.pronin.myphotomap.model;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.media.ExifInterface;
 import android.provider.MediaStore;
 import android.util.Log;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 public class PhotoArrayFormation {
     public static final String CAMERA_IMAGE_BUCKET_NAME = "Camera";
@@ -51,14 +61,20 @@ public class PhotoArrayFormation {
                 cursor.close();
                 Log.d(TAG, Integer.toString(imgList.size()));
                 HashMap<LatLong, ArrayList<Picture>> markersMap = new HashMap<>(createMarkersMap(imgList));
-                callback.onMarkersMapCreated(markersMap);
+                HashMap<LatLong, Bitmap> icons = new HashMap<>();
+                for (LatLong latLong : markersMap.keySet()) {
+                    String path = markersMap.get(latLong).get(0).getPath();
+                    Bitmap icon = getBitmap(path);
+                    icons.put(latLong, icon);
+                }
+                callback.onMarkersMapCreated(markersMap, icons);
         });
         getting.start();
 
     }
 
     public interface OnMarkersMapCreatedListener {
-        void onMarkersMapCreated(HashMap<LatLong, ArrayList<Picture>> pictures);
+        void onMarkersMapCreated(HashMap<LatLong, ArrayList<Picture>> pictures, HashMap<LatLong, Bitmap> icons);
     }
 
     private HashMap<LatLong, ArrayList<Picture>> createMarkersMap(ArrayList<Picture> pictureArrayList) {
@@ -80,4 +96,40 @@ public class PhotoArrayFormation {
         return mapMarkers;
     }
 
+    private Bitmap getBitmap(String path) {
+        Bitmap bitmap = null;
+        try {
+            File f = new File(path);
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 30;
+            options.outMimeType = "image/png";
+            bitmap = BitmapFactory.decodeStream(new FileInputStream(f), null, options);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+        if (bitmap != null) bitmap = getRoundedBitmap(bitmap);
+        return bitmap;
+    }
+
+    public static Bitmap getRoundedBitmap(Bitmap bitmap)
+    {
+        final Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),  bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        final Canvas canvas = new Canvas(output);
+
+        final int color = Color.RED;
+        final Paint paint = new Paint();
+        final Rect rect = new Rect(0, 0, Math.min(bitmap.getHeight(), bitmap.getWidth()), Math.min(bitmap.getHeight(), bitmap.getWidth()));
+        final RectF rectF = new RectF(rect);
+
+        paint.setAntiAlias(true);
+        canvas.drawARGB(0, 0, 0, 0);
+        paint.setColor(color);
+        canvas.drawOval(rectF, paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+        canvas.drawBitmap(bitmap, rect, rect, paint);
+
+        bitmap.recycle();
+
+        return output;
+    }
 }
