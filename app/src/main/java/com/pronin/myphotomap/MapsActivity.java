@@ -22,17 +22,18 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.pronin.myphotomap.model.LatLong;
-import com.pronin.myphotomap.model.PhotoArrayFormation;
+import com.pronin.myphotomap.util.MarkersWorker;
 import com.pronin.myphotomap.model.Picture;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
     private final String TAG = "MapsActivity";
     private GoogleMap mMap;
-    private PhotoArrayFormation photoArrayFormation;
+    private MarkersWorker markersWorker;
     private HashMap<LatLong, ArrayList<Picture>> markersMap;
     private static final String PERMISSION_FINE_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
     private static final String PERMISSION_EXTERNAL_STORAGE = Manifest.permission.READ_EXTERNAL_STORAGE;
@@ -43,7 +44,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
-        photoArrayFormation = new PhotoArrayFormation();
+        markersWorker = new MarkersWorker();
         markersMap = new HashMap<>();
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -62,31 +63,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         } else ActivityCompat.requestPermissions(this,
                 new String[]{ PERMISSION_EXTERNAL_STORAGE, PERMISSION_MEDIA_LOCATION, PERMISSION_FINE_LOCATION },
                 PERMISSION_REQUEST_CODE);
+        mMap.setOnMarkerClickListener(this);
 
     }
 
 
 
     private void setMarkersMap() {
-        photoArrayFormation.getCameraImages(this, new PhotoArrayFormation.OnMarkersMapCreatedListener() {
+        markersWorker.getCameraImages(this, new MarkersWorker.OnMarkersMapCreatedListener() {
             @Override
-            public void onMarkersMapCreated(HashMap<LatLong, ArrayList<Picture>> pictures, HashMap<LatLong, Bitmap> icons) {
+            public void onDrawIcon(LatLong latLong, Bitmap icon) {
                 runOnUiThread(() -> {
-                    HashMap<LatLong, Bitmap> iconsMap = new HashMap<>(icons);
-                    markersMap.putAll(pictures);
-                    Bitmap img;
-                    for (LatLong latLong : markersMap.keySet()) {
-                        img = iconsMap.get(latLong);
-                        if (img != null) {
-                            mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false).icon(BitmapDescriptorFactory.fromBitmap(img)));
-                            Log.d(TAG, "Added marker with icon " + latLong.toString());
-                        } else {
-                            mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false));
-                            Log.d(TAG, "Added marker without icon " + latLong.toString());
-                        }
+                    if (icon != null) {
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude()))
+                                .draggable(false).icon(BitmapDescriptorFactory.fromBitmap(icon))).setTag(latLong);
+                        Log.d(TAG, "Added marker with icon " + latLong.toString());
+                    } else {
+                        mMap.addMarker(new MarkerOptions().position(new LatLng(latLong.getLatitude(), latLong.getLongitude())).draggable(false)).setTag(latLong);
+                        Log.d(TAG, "Added marker without icon " + latLong.toString());
                     }
-                    iconsMap.clear();
                 });
+            }
+
+            @Override
+            public void onMarkersMapCreated(HashMap<LatLong, ArrayList<Picture>> pictures) {
+                runOnUiThread(() -> markersMap.putAll(pictures));
             }
         });
     }
@@ -99,7 +100,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (location != null) {
                 double lat = location.getLatitude();
                 double lon = location.getLongitude();
-                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 10);
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lon), 8);
                 mMap.animateCamera(cameraUpdate);
             } else Toast.makeText(this, getString(R.string.no_location), Toast.LENGTH_LONG).show();
             mMap.setMyLocationEnabled(true);
@@ -124,5 +125,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Integer clickCount = (Integer) marker.getTag();
+
+        
+        return false;
     }
 }
