@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.location.Criteria;
@@ -67,8 +68,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
-
     private void setMarkersMap() {
         markersWorker.getCameraImages(this, new MarkersWorker.OnMarkersMapCreatedListener() {
             @Override
@@ -91,7 +90,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
     }
-
 
     private void focusCamera() {
         if (ContextCompat.checkSelfPermission(this, PERMISSION_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -129,9 +127,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public boolean onMarkerClick(Marker marker) {
-        Integer clickCount = (Integer) marker.getTag();
-
-        
+        LatLong latLong = (LatLong) marker.getTag();
+        ArrayList<Picture> imgList = markersMap.get(latLong);
+        if (imgList != null) {
+            if (imgList.size() == 1) {
+                Intent intent = new Intent(this, ImageActivity.class);
+                intent.putExtra(ImageActivity.EXTRA_IMG, imgList.get(0).getPath());
+                startActivity(intent);
+            } else {
+                Intent intent = new Intent(this, ImgListActivity.class);
+                intent.putParcelableArrayListExtra(ImgListActivity.EXTRA_IMG_LIST, imgList);
+                startActivity(intent);
+            }
+        }
         return false;
     }
 }

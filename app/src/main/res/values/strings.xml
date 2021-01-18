@@ -8,4 +8,5 @@
     <string name="title_activity_maps">MyPhotoMap</string>
     <string name="no_permissions_msg">Application requires all requested permissions</string>
     <string name="no_location">Failed to get location</string>
+    <string name="item_image">Item image</string>
 </resources>
